@@ -1,0 +1,2 @@
+clang -I ./include/ src/main.c src/tools.c src/arp.c src/tap.c src/netdev.c 
+#gcc -I ./include/ src/new_main.c

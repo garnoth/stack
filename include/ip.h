@@ -1,0 +1,5 @@
+
+#define IP_ADDR_LEN_V4 0x0004
+#define IP_ADDR_LEN_V6 0x0016
+
+
