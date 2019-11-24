@@ -11,7 +11,8 @@ struct netdev *netdev;
 
 // makes calls to setup a loopback device and a basic netdev device
 // hardcoded just for the 2 devices atm. loopback may not be needed
-void netdev_init(char *ip_addr, char *hw_addr)
+//void netdev_init(char *ip_addr, char *hw_addr)
+void netdev_init()
 {
     // AF_INET or AF_INET6
     int addr_fam = AF_INET;
@@ -35,7 +36,10 @@ void netdev_init(char *ip_addr, char *hw_addr)
 static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16_t mtu, int addr_fam) 
 {
     struct netdev *dev = (struct netdev *) malloc(sizeof(struct netdev));
-    // fixme: do we need to guard malloc failures here?
+    if (dev == NULL) {
+        perror("malloc failed");
+        exit(EXIT_FAILURE);
+    }
     // write mac address, fixme write better solution, allow for variable width
     // like 2C:0:40:4... etc
     memcpy(dev->hw_addr, hw_addr, ETH_ADDR_LEN);
@@ -52,17 +56,33 @@ static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16
     }
     // finally write the mtu value
     dev->mtu = mtu;
-    
+
     return dev;
 }
 
 //  fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tunnel
-int netdev_send( struct ifreq *ifr, uint8_t *dst_hw, uint16_t ethertype);
+int netdev_send( struct ifreq *ifr, uint8_t *dst_hw, uint16_t ethertype)
+{
+    return 0;
+}
 
 // return a pointer to the netdev if the given ip matches what we have
-// configured previously
-struct netdev *net_dev_get(uint32_t ip);
+// configured previously. Takes a host ordered ip address
+struct netdev *net_dev_get(uint32_t ip)
+{
+    if ( htonl(ip) == netdev->ip_addr){
+        return netdev;
+    } else if (htonl(ip) == loopback->ip_addr) {
+        return loopback;
+    }
+    // no matching configured device found, did you accidentally convert
+    // the ip to network order before calling this function?
+    return NULL;
+}
 
 // process recieving a packet, send packets to arp or ip4/6 layer
-static int netdev_recv(struct ifreq *ifr);
+static int netdev_recv(struct ifreq *ifr) 
+{
+    return 0;
+}

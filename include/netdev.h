@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdlib.h> // malloc
+#include <stdio.h> // perror
 #include <net/if.h>
 #include "eth.h"
 #include "ip.h"
@@ -23,7 +24,8 @@ struct netdev
 
 // makes calls to setup a loopback device and a basic netdev device
 // hardcoded just for the 2 devices atm. loopback may not be needed
-void netdev_init(char *ip_addr, char *hw_addr);
+// this function currently has the hardcoded ip and mac values
+void netdev_init();
 
 // setup up the netdev struct when called by init
 // and returns a ptr to the allocated memory

@@ -15,10 +15,12 @@ char * byte2str(int i)
     str[bits] = '\0';
 
     // type punning because signed shift is implementation-defined
-    unsigned u = *(unsigned *)&i;
-    for(; bits--; u >>= 1)
+    unsigned char u = *(unsigned char *)&i;
+    for(; bits--; u >>= 1){
         str[bits] = u & 1 ? '1' : '0';
-
+ printf("bits: %zu\n",bits);
+    }
+ printf("final bits: %zu\n",bits);
     return str;
 }
 
