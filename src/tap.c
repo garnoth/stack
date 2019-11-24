@@ -1,21 +1,23 @@
 #include "tap.h"
 #include "tools.h"
 
+
 static int tapfd;
 // static char* dev; // needed later when we plumb in the name
 
-// try to open /dev/tap0
+// try to open /dev/tap6
+// this must have been previously created
 // plumb in optional name and non-hardcoded value later 
 // i.e. tap2 or something
 static int get_tap()
 {
     int fd;
-    char * path = "/dev/tap0";
+    char * path = "/dev/tap6";
     fd = open(path, O_RDWR | O_NONBLOCK);
     if (fd != -1) {
+        printf("Successfully opened %s\n", path);
         return (fd);
     }
-
     return (-1);
 }
 
@@ -24,7 +26,7 @@ void tap_init()
 {
     tapfd = get_tap();
     if (tapfd < 0) {
-        perror("error: could not get tap device");
+    perror("Error:");
         exit(EXIT_FAILURE);    
     }
 }
@@ -53,9 +55,9 @@ void print_tap_info()
     free(tinfo);
 }
 
-// for any clean-up later on
-void tap_destroy() 
+// clean-up operations for the tap device
+void tap_close()
 {
-    //    free (dev);
+    close(tapfd);
 }
 

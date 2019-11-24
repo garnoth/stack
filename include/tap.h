@@ -17,17 +17,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h> // has struct sin_addr
-#include <unistd.h> //write
+#include <unistd.h> //write and close
 #include <netinet/if_ether.h>
 #include <arpa/inet.h> // htns
-
+#include  <sys/errno.h>
 #define MAX_TAP	256
 #define PATH_MAX 1024
-#define ETH_ADDR_SIZE 6
 
 static int get_tap();
 void tap_init();
 int tap_read(char *buf, int len);
 int tap_write(char *buf, int len);
 void print_tap_info();
-void tap_destroy();
+void tap_close();

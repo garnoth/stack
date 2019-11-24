@@ -12,6 +12,6 @@ int main()
 {
 start_up();
 
-
+tap_close();
     return 0;
 }
