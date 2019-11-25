@@ -10,9 +10,10 @@
 ## Preconditions
  currently I'm not sure how to allow users to create a tap device on the fly
  so right now I'm creating tap6 which doesn't exist by default
-###
+```
 cd /dev
 mknod -m 666 tap6 c 93 6
-##
- as root to allow normal users who run this program to open the tap device
- hopefully there is an easier way in the future
+```
+as root to allow normal users who run this program to open the tap device
+hopefully there is an easier way in the future
+
