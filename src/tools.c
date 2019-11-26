@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <net/if_tun.h>
 #include <net/if.h>
+#include <arpa/inet.h>
 #include "tools.h"
 
 // good for debugging, inspired from stackoverflow
@@ -81,4 +82,12 @@ void print_eth_hdr(struct eth_hdr *e)
     }
     printf("\n");
     printf("ethertype: 0x%X \n", ntohs(e->ethertype));
+}
+
+// convert an IPv4 string into it's 4 byte equiv, host order
+uint32_t ipv4str_to_bytes(char * ip)
+{
+    uint32_t ret_ip;
+    inet_pton(AF_INET, ip, &ret_ip);
+    return ntohl(ret_ip);
 }

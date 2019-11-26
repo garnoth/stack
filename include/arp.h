@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "eth.h"
+#include "netdev.h"
 
 /* Manually defined system headers
  * For networking protocols
@@ -13,11 +14,12 @@
 #define ARP_REV_REQ 3
 #define ARP_REV_REP 4
 
-#define ARP_TABLE_MAX 64
+#define ARP_TABLE_MAX 64 // unused
 
 #define ARP_ENTRY_FREE          0
 #define ARP_ENTRY_RESOLVED      1
 #define ARP_ENTRY_UNRESOLVED    2  
+
 /*
  *  Address lengths format
  */
@@ -54,9 +56,9 @@ struct arp_ipv4
 void arp_system_init();
 
 // process an incomming ARP packet
-void arp_recv( struct eth_hdr *);
+void arp_recv( struct eth_hdr *, struct netdev *);
 
 // create an arp response to send out to the network
-void arp_send(uint32_t, unsigned char *, int);
+void arp_send(uint32_t, unsigned char *, int, struct netdev *);
 
 void mac_to_string(char *, unsigned char*);

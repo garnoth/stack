@@ -44,14 +44,25 @@ static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16
     // like 2C:0:40:4... etc
     memcpy(dev->hw_addr, hw_addr, ETH_ADDR_LEN);
 
-    // store the ip in network order
+    // convert the string ip to bytes
     inet_pton(addr_fam, ip_addr, &dev->ip_addr);
 
     // write the current ip address length, 4 bytes or 16
     if (addr_fam == AF_INET){
+
+        // convert the ip to bytes but then convert back to host order
+        dev->ip_addr = ntohl(dev->ip_addr);
+
         dev->ip_addr_len = IP_ADDR_LEN_V4; 
     } else {
         // ipv6 case
+        // convert the ip to bytes but then convert back to host order
+        uint32_t * ip = (uint32_t*) &dev->ip_addr;
+        ip[0] = ntohl(ip[0]);
+        ip[1] = ntohl(ip[1]);
+        ip[2] = ntohl(ip[2]);
+        ip[3] = ntohl(ip[3]);
+
         dev->ip_addr_len = IP_ADDR_LEN_V6;
     }
     // finally write the mtu value
@@ -62,18 +73,26 @@ static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16
 
 //  fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tunnel
-int netdev_send( struct ifreq *ifr, uint8_t *dst_hw, uint16_t ethertype)
+int netdev_send( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype)
 {
     return 0;
 }
 
+//// return a pointer to the netdev if the given ip matches what we have
+//// configured previously. Takes an ip address string
+//struct netdev *netdev_get(char * ip)
+//{
+//    uint32_t search_ip =  ipv4str_to_bytes(ip);
+//    return _netdev_get(search_ip);
+//}
+
 // return a pointer to the netdev if the given ip matches what we have
 // configured previously. Takes a host ordered ip address
-struct netdev *net_dev_get(uint32_t ip)
+struct netdev *netdev_get_self(uint32_t ip)
 {
-    if ( htonl(ip) == netdev->ip_addr){
+    if ( ip == netdev->ip_addr){
         return netdev;
-    } else if (htonl(ip) == loopback->ip_addr) {
+    } else if ( ip == loopback->ip_addr) {
         return loopback;
     }
     // no matching configured device found, did you accidentally convert
@@ -82,7 +101,7 @@ struct netdev *net_dev_get(uint32_t ip)
 }
 
 // process recieving a packet, send packets to arp or ip4/6 layer
-static int netdev_recv(struct ifreq *ifr) 
+static int netdev_recv(struct gbuf * gbuf) 
 {
     return 0;
 }

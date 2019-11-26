@@ -3,15 +3,15 @@
 // the struct for a netdev. This is a structure which holds the network device
 // layer information like configured ip addr and hardware mac address and
 // interface mtu which we get from the tap device
-
+#pragma once
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <stdlib.h> // malloc
 #include <stdio.h> // perror
-#include <net/if.h>
+#include "gbuf.h"
 #include "eth.h"
 #include "ip.h"
-
+#include "tools.h"
 #include <string.h> // memcpy
 
 struct netdev
@@ -33,11 +33,11 @@ static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16
 
 //  fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tunnel
-int netdev_send( struct ifreq *ifr, uint8_t *dst_hw, uint16_t ethertype);
+int netdev_send( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype);
 
 // return a pointer to the netdev if the given ip matches what we have
-// configured previously
-struct netdev *net_dev_get(uint32_t ip);
+// configured previously. Takes a host ordered ip address
+struct netdev *netdev_get_self(uint32_t);
 
 // process recieving a packet, send packets to arp or ip4/6 layer
-static int netdev_recv(struct ifreq *ifr);
+static int netdev_recv(struct gbuf *gbuf);
