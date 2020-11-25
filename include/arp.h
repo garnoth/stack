@@ -8,7 +8,6 @@
  *
  * ARP related structures defined here
  */
-
 #define ARP_REQUEST 1
 #define ARP_REPLY   2
 #define ARP_REV_REQ 3
@@ -46,19 +45,36 @@ struct arp_hdr
 
 struct arp_ipv4
 {
-    unsigned char src_mac[ETH_ADDR_LEN];
+    unsigned char src_mac[ETH_ADDR_LEN]; // usually 6 bytes
     uint32_t      src_ip;
-    unsigned char dst_mac[ETH_ADDR_LEN];
+    unsigned char dst_mac[ETH_ADDR_LEN]; 
     uint32_t      dst_ip;
 } __attribute__((packed));
 
-//setup the ARP subsystem
-void arp_system_init();
+// setup the ARP subsystem
+void init_arp_system();
 
-// process an incomming ARP packet
-void arp_recv( struct eth_hdr *, struct netdev *);
+// adds an arp entry to the list
+//static void _add_arp_entry( uint32_t src_ip, unsigned char *src_mac);
+void _add_arp_entry( uint32_t src_ip, unsigned char *src_mac);
 
-// create an arp response to send out to the network
-void arp_send(uint32_t, unsigned char *, int, struct netdev *);
+// returns a ptr to an arp_cache_entry if the given ip is found in arp table
+static struct arp_cache_entry * _get_node_by_ip(uint32_t ip);
 
-void mac_to_string(char *, unsigned char*);
+
+/* update the ARP tables entry with src mac address for the given ip, if it exists
+ * if it does, update the entry and return 1 to indicate we performed an
+ * update. else return 0 indicating no update
+ */
+static int _update_arp_table(uint32_t ip, unsigned char *mac);
+
+// print the arp table
+void print_arp_table();
+
+// process an incoming ARP packet 
+void recv_arp( struct eth_hdr *, struct netdev *);
+
+
+// create an arp response to send out to the netdev
+void send_arp(uint32_t, unsigned char *, int, struct netdev *);
+

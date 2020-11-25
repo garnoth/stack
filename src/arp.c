@@ -7,7 +7,7 @@
 
 // the arp table head entry
 
-// linked list node holding arp_cache_entries
+// linked list of nodes holding arp_cache_entries
 struct arp_cache_node
 {
     struct arp_cache_entry entry;
@@ -18,7 +18,7 @@ struct arp_cache_node
 SLIST_HEAD(head_s, arp_cache_node) head;
 
 // init the arp system. Create the arp_table linked list head entry
-void arp_system_init()
+void init_arp_system()
 {
     // init the head before use
     SLIST_INIT(&head);
@@ -26,7 +26,9 @@ void arp_system_init()
 
 // adds to the front of the list
 // does not check for duplicates first
-static void add_arp_entry( uint32_t src_ip, unsigned char *src_mac) {
+///static void _add_arp_entry( uint32_t src_ip, unsigned char *src_mac) 
+void _add_arp_entry( uint32_t src_ip, unsigned char *src_mac) 
+{
     struct arp_cache_node * e = NULL;
     e = malloc(sizeof(struct arp_cache_node));
     if (e == NULL)
@@ -37,7 +39,7 @@ static void add_arp_entry( uint32_t src_ip, unsigned char *src_mac) {
     // copy in the ip address
     e->entry.src_ip = src_ip;
 
-    // copy in the mac address
+    // copy in the MAC address
     memcpy(e->entry.src_mac, src_mac, ETH_ADDR_LEN);
     e->entry.resolved = 0; 
     SLIST_INSERT_HEAD(&head, e, nodes);
@@ -53,14 +55,16 @@ static struct arp_cache_entry * _get_node_by_ip(uint32_t ip)
         if (e->entry.src_ip == ip)    
             return &e->entry;
     }
+    fprintf(stderr, "DEBUG WARNING, var \"ip\" called with a null value!");
     return NULL;
 }
 
 
-// update the ARP tables entry with src mac address for the given ip, if it exists
-// if it does, update the entry and return 1 to indicate we performed an
-// update. else return 0 indicating no update
-static int update_arp_table_ip(uint32_t ip, unsigned char *mac)
+/* update the ARP tables entry with src mac address for the given ip, if it exists
+ * if it does, update the entry and return 1 to indicate we performed an
+ * update. else return 0 indicating no update
+ */
+static int _update_arp_table(uint32_t ip, unsigned char *mac)
 {
     struct arp_cache_entry * e = _get_node_by_ip(ip);
     if (e != NULL){
@@ -74,23 +78,24 @@ static int update_arp_table_ip(uint32_t ip, unsigned char *mac)
 // print the arp table
 void print_arp_table() 
 {
+    fprintf(stdout,"Host\t\t\tEthernet Address\tNetDev\n");
     struct arp_cache_node * e = NULL;
     char ip_str[INET_ADDRSTRLEN];
+    char * str = (char*)malloc(18);//what why this much?
     SLIST_FOREACH(e,&head, nodes)
     {
         inet_ntop(AF_INET, &e->entry.src_ip, ip_str, INET_ADDRSTRLEN);
-        printf("IP:  %s\n", ip_str);
-        char * str = (char*)malloc(18);
+        fprintf(stdout, "%s\t\t", ip_str);
         mac_to_string(str, e->entry.src_mac);
-        printf("MAC: %s\n", str);
-        free (str);
+        fprintf(stdout, "%s\n", str);
     }
+    free(str);
 }
 
 // the main processing algorithm for reciving arp packets
 // follows RFC826 as best I can follow. This is my first reading of an RFC for 
 // writing code to implement it
-void arp_recv( struct eth_hdr * eth_header, struct netdev * nd)
+void recv_arp( struct eth_hdr * eth_header, struct netdev * device)
 {
     // create 2 structs for decoding the received packet
     struct arp_hdr *arp_header = (struct arp_hdr*)eth_header->payload;
@@ -104,16 +109,16 @@ void arp_recv( struct eth_hdr * eth_header, struct netdev * nd)
             (arp_header->hwsize == ETH_ADDR_LEN)) {
         if (ntohs(arp_header->protype) == ETHERTYPE_IP) { // only process ipv4 arp
             // the merge flag comes from the RFC
-            merge = update_arp_table_ip(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac);
-            nd = netdev_get_self(ntohl(arp_ipv4->dst_ip));
-            if (nd != NULL) {
+            merge = _update_arp_table(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac);
+            device = get_netdev_self(ntohl(arp_ipv4->dst_ip));
+            if (device != NULL) {
                 // the dst_ip matches my IP. i.e., I am the dst
                 if (!merge) { // merge flag is false, add the triplett
-                    add_arp_entry(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac);
+                    _add_arp_entry(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac);
                 }
                 if (arp_header->opcode == ARP_REQUEST) {
                     // send a reply packet swapping dst and src fields
-                    arp_send(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac, ARP_REPLY, nd);
+                    send_arp(ntohl(arp_ipv4->src_ip), arp_ipv4->src_mac, ARP_REPLY, device);
                 }
             } // I wasn't the dst_ip, skip further processing
         } else {
@@ -125,7 +130,8 @@ void arp_recv( struct eth_hdr * eth_header, struct netdev * nd)
     }
 }
 
-void arp_send(uint32_t dst_ip, unsigned char * dst_mac, int opcode, struct netdev *nd)
+// create an arp response to send out to the netdev
+void send_arp(uint32_t dst_ip, unsigned char * dst_mac, int opcode, struct netdev * device)
 {
     struct arp_hdr *arp_header = (struct arp_hdr*)malloc(sizeof(struct arp_hdr));
     struct arp_ipv4 *arp_ipv4 = (struct arp_ipv4*)malloc(sizeof(struct arp_ipv4));
@@ -137,12 +143,12 @@ void arp_send(uint32_t dst_ip, unsigned char * dst_mac, int opcode, struct netde
     arp_header->opcode = htons(opcode); 
 
     // fill in the arp_ipv4 fields
-    memcpy(arp_ipv4->src_mac, &nd->hw_addr , ETH_ADDR_LEN);
-    arp_ipv4->src_ip = htonl(nd->ip_addr); 
+    memcpy(arp_ipv4->src_mac, &device->hw_addr , ETH_ADDR_LEN);
+    arp_ipv4->src_ip = htonl(device->ip_addr); 
     memcpy(arp_ipv4->dst_mac, dst_mac , ETH_ADDR_LEN);
     arp_ipv4->dst_ip = htonl(dst_ip);
-   
+
     // create an IFR to pass to the netdev
     // write out packet 
-//    int netdev_send( struct ifreq *ifr, dst_mac, ETHERTYPE_IP);
+    //    int netdev_send( struct ifreq *ifr, dst_mac, ETHERTYPE_IP);
 }

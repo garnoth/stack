@@ -12,7 +12,7 @@ struct netdev *netdev;
 // makes calls to setup a loopback device and a basic netdev device
 // hardcoded just for the 2 devices atm. loopback may not be needed
 //void netdev_init(char *ip_addr, char *hw_addr)
-void netdev_init()
+void init_netdev()
 {
     // AF_INET or AF_INET6
     int addr_fam = AF_INET;
@@ -26,14 +26,14 @@ void netdev_init()
     char * netdev_ip =  "192.168.0.10";
 
 
-    loopback    = netdev_alloc(loop_ip, mac_loop, ETH_MTU, addr_fam);
-    netdev      = netdev_alloc(netdev_ip, mac_dev, ETH_MTU, addr_fam);
+    loopback    = alloc_netdev(loop_ip, mac_loop, ETH_MTU, addr_fam);
+    netdev      = alloc_netdev(netdev_ip, mac_dev, ETH_MTU, addr_fam);
 
 }
 
 // setup up the netdev struct when called by init
 // and returns a ptr to the allocated memory
-static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16_t mtu, int addr_fam) 
+static struct netdev * alloc_netdev(char *ip_addr, unsigned char *hw_addr, uint16_t mtu, int addr_fam) 
 {
     struct netdev *dev = (struct netdev *) malloc(sizeof(struct netdev));
     if (dev == NULL) {
@@ -73,7 +73,7 @@ static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16
 
 //  fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tunnel
-int netdev_send( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype)
+int write_netdev( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype)
 {
     return 0;
 }
@@ -88,7 +88,7 @@ int netdev_send( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype)
 
 // return a pointer to the netdev if the given ip matches what we have
 // configured previously. Takes a host ordered ip address
-struct netdev *netdev_get_self(uint32_t ip)
+struct netdev * get_netdev_self(uint32_t ip)
 {
     if ( ip == netdev->ip_addr){
         return netdev;
@@ -101,7 +101,7 @@ struct netdev *netdev_get_self(uint32_t ip)
 }
 
 // process recieving a packet, send packets to arp or ip4/6 layer
-static int netdev_recv(struct gbuf * gbuf) 
+static int recv_netdev(struct gbuf * gbuf) 
 {
     return 0;
 }

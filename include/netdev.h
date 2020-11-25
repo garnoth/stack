@@ -18,26 +18,26 @@ struct netdev
 {
     uint32_t    ip_addr;
     uint8_t     ip_addr_len;
-    uint8_t     hw_addr[ETH_ADDR_LEN];
+    uint8_t     hw_addr[ETH_ADDR_LEN]; // def 6 bytes
     uint16_t    mtu;
 };
 
 // makes calls to setup a loopback device and a basic netdev device
 // hardcoded just for the 2 devices atm. loopback may not be needed
 // this function currently has the hardcoded ip and mac values
-void netdev_init();
+void init_netdev();
 
 // setup up the netdev struct when called by init
 // and returns a ptr to the allocated memory
-static struct netdev *netdev_alloc(char *ip_addr, unsigned char *hw_addr, uint16_t mtu, int);
+static struct netdev * alloc_netdev(char *ip_addr, unsigned char *hw_addr, uint16_t mtu, int);
 
-//  fills in the netdev layer items like dst and src mac and
-// ethertype fields before writing to the tunnel
-int netdev_send( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype);
+// fills in the netdev layer items like dst and src mac and
+// ethertype fields before writing to the tap
+int write_netdev( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype);
 
 // return a pointer to the netdev if the given ip matches what we have
 // configured previously. Takes a host ordered ip address
-struct netdev *netdev_get_self(uint32_t);
+struct netdev * get_netdev_self(uint32_t);
 
 // process recieving a packet, send packets to arp or ip4/6 layer
-static int netdev_recv(struct gbuf *gbuf);
+static int recv_netdev(struct gbuf *gbuf);

@@ -36,12 +36,11 @@ char dec_to_hexii(uint8_t val) {
     }
 }
 
-// this function takes a ptr to a string and writes in the mac address
-// from the given pointer
+// takes a string ptr and a mac address and writes it as a human readable MAC address
 void mac_to_string(char * str, unsigned char* mac) {
-    uint8_t i, j;
-    j = 0;
-    for (i = 0; i < ETH_ADDR_LEN; i++) {
+    uint8_t i = 0;
+    uint8_t j = 0;
+    for (; i < ETH_ADDR_LEN; i++) {
         // shift the upper 4 bits right so we just get them
         str[j++] = dec_to_hexii(mac[i] >> 4); 
         // mask off the upper 4 bits so we just get the lower 4
@@ -52,7 +51,7 @@ void mac_to_string(char * str, unsigned char* mac) {
     str[--j] = '\0';
 }
 
-
+// print tun information
 void print_tuninfo(struct tuninfo *t)
 {
     printf("mtu:   %d \n", t->mtu);
@@ -70,10 +69,10 @@ void print_tuninfo(struct tuninfo *t)
 
 void print_eth_hdr(struct eth_hdr *e)
 {
-    int i;
+    int i = 0;
 
     printf("d_mac: ");
-    for (i = 0; i < ETH_ADDR_LEN; i++) {
+    for (; i < ETH_ADDR_LEN; i++) {
     printf( "%X",e->dst_mac[i]);
     }
     printf("\n s_mac: ");
