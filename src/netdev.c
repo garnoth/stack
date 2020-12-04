@@ -73,9 +73,25 @@ static struct netdev * alloc_netdev(char *ip_addr, unsigned char *hw_addr, uint1
 
 //  fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tunnel
-int write_netdev( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype)
+int write_netdev( struct netdev * device, char * caller_buf, size_t len, 
+        uint8_t *dst_mac, uint16_t ethertype)
 {
-    return 0;
+    // TODO don't do so many mallocs, figure out where buffers and handled and
+    // taken down appropriatly 
+    struct eth_hdr * ethernet_header;
+    size_t ret;
+    // room for payload plus an ethernet header
+    char * buf = (char *)malloc(len+ETH_HDR_LEN);
+
+    ethernet_header = (struct eth_hdr *)buf;
+    memcpy(ethernet_header->src_mac, device->hw_addr, ETH_ADDR_LEN);
+    memcpy(ethernet_header->dst_mac, dst_mac, ETH_ADDR_LEN);
+    ethernet_header->ethertype = htons(ethertype);
+    memcpy(ethernet_header->payload, caller_buf, len); 
+
+    ret = write_tap(buf, len+ETH_HDR_LEN);
+    free(buf);
+    return ret;
 }
 
 //// return a pointer to the netdev if the given ip matches what we have
@@ -100,8 +116,9 @@ struct netdev * get_netdev_self(uint32_t ip)
     return NULL;
 }
 
-// process recieving a packet, send packets to arp or ip4/6 layer
+// process reV
 static int recv_netdev(struct gbuf * gbuf) 
 {
     return 0;
 }
+

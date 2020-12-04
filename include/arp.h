@@ -1,4 +1,5 @@
 #pragma once
+#include <pthread.h>
 #include <stdint.h>
 #include "eth.h"
 #include "netdev.h"
@@ -51,8 +52,16 @@ struct arp_ipv4
     uint32_t      dst_ip;
 } __attribute__((packed));
 
+//global var for ARP system thread
+pthread_t arp_thread;
+
+void* arp_thread_routine();
+
 // setup the ARP subsystem
 void init_arp_system();
+
+// tear down the ARP subsystem and free any nodes
+void destroy_arp_system();
 
 // adds an arp entry to the list
 //static void _add_arp_entry( uint32_t src_ip, unsigned char *src_mac);

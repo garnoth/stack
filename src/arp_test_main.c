@@ -38,5 +38,9 @@ _add_arp_entry(ip3, mac3);
 _add_arp_entry(ip4, mac4);
 // start receiving packets in a loop
 print_arp_table();
+
+printf("main thread cleaning up \n");
+// done for the day
+destroy_arp_system();
     return 0;
 }

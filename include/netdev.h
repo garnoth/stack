@@ -13,6 +13,7 @@
 #include "ip.h"
 #include "tools.h"
 #include <string.h> // memcpy
+#include "tap.h"
 
 struct netdev
 {
@@ -33,7 +34,7 @@ static struct netdev * alloc_netdev(char *ip_addr, unsigned char *hw_addr, uint1
 
 // fills in the netdev layer items like dst and src mac and
 // ethertype fields before writing to the tap
-int write_netdev( struct gbuf *gbuf, uint8_t *dst_hw, uint16_t ethertype);
+int write_netdev( struct netdev * device, char * buf, size_t len, uint8_t *dst_hw, uint16_t ethertype);
 
 // return a pointer to the netdev if the given ip matches what we have
 // configured previously. Takes a host ordered ip address

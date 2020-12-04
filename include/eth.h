@@ -7,6 +7,7 @@
 #define ETH_ADDR_LEN    0x0006 // 6 bytes for hw address
 #define ETH_MTU         0x1500 // default ethernet mtu
 
+#define ETH_HDR_LEN 14
 // ethernet header: 12 bytes + 2 for type
 // 14 total bytes. The types we will need to use:
 // ETHERTYPE_ARP ETHERTYPE_IP

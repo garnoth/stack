@@ -22,6 +22,38 @@ void init_arp_system()
 {
     // init the head before use
     SLIST_INIT(&head);
+
+    if (pthread_create(&arp_thread, NULL, arp_thread_routine, NULL)) {
+        fprintf(stderr, "Error creating ARP thread!\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void* arp_thread_routine(){
+    printf("ARP thread started, sleeping!");
+    sleep(6);
+    return NULL;
+}
+
+
+// tear down the ARP subsystem and free any nodes
+void destroy_arp_system()
+{
+    int i = 0;
+    if(pthread_join(arp_thread, NULL)) {
+        fprintf(stderr, "Error joining ARP thread!\n");
+        exit(EXIT_FAILURE);
+
+    }
+    // free each item in the queue until we are done
+    struct arp_cache_node * e = NULL;
+    while (!SLIST_EMPTY(&head)) {
+        i++;
+        e = SLIST_FIRST(&head);
+        SLIST_REMOVE_HEAD(&head, nodes);
+        free(e);
+    }
+    fprintf(stdout, "ARP SYSTEM: freed %d entries\n",i);
 }
 
 // adds to the front of the list
@@ -80,16 +112,19 @@ void print_arp_table()
 {
     fprintf(stdout,"Host\t\t\tEthernet Address\tNetDev\n");
     struct arp_cache_node * e = NULL;
-    char ip_str[INET_ADDRSTRLEN];
-    char * str = (char*)malloc(18);//what why this much?
+
+    /* ethernet addresses are 17 characters long plus null term char
+     * we can use this for both ethernet address and the IP address
+     */
+    char str[18]; 
     SLIST_FOREACH(e,&head, nodes)
     {
-        inet_ntop(AF_INET, &e->entry.src_ip, ip_str, INET_ADDRSTRLEN);
-        fprintf(stdout, "%s\t\t", ip_str);
+        // convert binary address to text
+        inet_ntop(AF_INET, &e->entry.src_ip, str, INET_ADDRSTRLEN);
+        fprintf(stdout, "%s\t\t", str);
         mac_to_string(str, e->entry.src_mac);
         fprintf(stdout, "%s\n", str);
     }
-    free(str);
 }
 
 // the main processing algorithm for reciving arp packets
@@ -131,10 +166,13 @@ void recv_arp( struct eth_hdr * eth_header, struct netdev * device)
 }
 
 // create an arp response to send out to the netdev
-void send_arp(uint32_t dst_ip, unsigned char * dst_mac, int opcode, struct netdev * device)
+void send_arp(uint32_t dst_ip, uint8_t * dst_mac, int opcode, struct netdev * device)
 {
-    struct arp_hdr *arp_header = (struct arp_hdr*)malloc(sizeof(struct arp_hdr));
-    struct arp_ipv4 *arp_ipv4 = (struct arp_ipv4*)malloc(sizeof(struct arp_ipv4));
+  //  struct arp_hdr *arp_header = (struct arp_hdr*)malloc(sizeof(struct arp_hdr));
+//    struct arp_ipv4 *arp_ipv4 = (struct arp_ipv4*)malloc(sizeof(struct arp_ipv4));
+    size_t len = sizeof(struct arp_hdr)+sizeof(struct arp_ipv4);
+    struct arp_hdr *arp_header = (struct arp_hdr*)malloc(len);
+    struct arp_ipv4 *arp_ipv4 = (struct arp_ipv4*)arp_hdr+(sizeof(struct arp_hdr));
     // fill in the arp_hdr fields
     arp_header->hwtype = htons(ARP_HRD_ETH);
     arp_header->protype = htons(ETHERTYPE_IP);
@@ -148,7 +186,7 @@ void send_arp(uint32_t dst_ip, unsigned char * dst_mac, int opcode, struct netde
     memcpy(arp_ipv4->dst_mac, dst_mac , ETH_ADDR_LEN);
     arp_ipv4->dst_ip = htonl(dst_ip);
 
-    // create an IFR to pass to the netdev
     // write out packet 
-    //    int netdev_send( struct ifreq *ifr, dst_mac, ETHERTYPE_IP);
+    ret = write_netdev( device, arp_header, len, dst_mac, ETHERTYPE_ARP);
+    free(arp_header);
 }
